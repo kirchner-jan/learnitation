@@ -35,9 +35,8 @@ def train_model(
     train_accuracies = []
     test_accuracies = []
 
-    # List to store model snapshots from last 10% of training
+    # List to store model snapshots from last epoch
     model_snapshots = []
-    snapshot_start_epoch = int(0.9 * num_epochs)
 
     for epoch in range(num_epochs):
         model.train()
@@ -58,6 +57,12 @@ def train_model(
             _, predicted = output.max(1)
             total += target.size(0)
             correct += predicted.eq(target).sum().item()
+
+            # Save model snapshot if in the last epoch
+            if save_last_snapshots and epoch == num_epochs - 1:
+                model_copy = copy.deepcopy(model)
+                model_copy.eval()  # Set to eval mode for consistency
+                model_snapshots.append(model_copy)
 
         train_loss = train_loss / len(train_loader)
         train_accuracy = 100.0 * correct / total
@@ -89,12 +94,6 @@ def train_model(
         print(f"Train Loss: {train_loss:.4f}, Train Accuracy: {train_accuracy:.2f}%")
         print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.2f}%")
         print("--------------------")
-
-        # Save model snapshot if in last 10% of training
-        if save_last_snapshots and epoch >= snapshot_start_epoch:
-            model_copy = copy.deepcopy(model)
-            model_copy.eval()  # Set to eval mode for consistency
-            model_snapshots.append(model_copy)
 
     results = {
         "train_losses": train_losses,
